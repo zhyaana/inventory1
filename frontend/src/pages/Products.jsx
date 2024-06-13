@@ -6,23 +6,28 @@ import Modal from '../components/product modals/Modal';
 import { CategoryContext , ProductContext} from '../App';
 import DeleteModal from '../components/product modals/DeleteModal';
 import EditModal from '../components/product modals/EditModal';
+import Pagination from '../components/Pagination';
 const Products = () => {
     const [products, setProducts] = useState([]);
     const [showModal, setShowModal] = useState(false)
     const [deleteModal, setDeleteModal] = useState({ status: false, id: 0 })
     const [editMode , setEditMode] = useState({status : false , product:{} , id:0});
-    const {isProductsUpadted , setIsProductsUpdated , notRemainedProducts} = useContext(ProductContext);
+    const {isProductsUpadted, setIsProductsUpdated , notRemainedProducts} = useContext(ProductContext);
+    const {isCategoryUpdated} = useContext(CategoryContext)
+    const [currentPage , setCurrentPage] = useState(1)
+    const [itemsPerPage , setItemsPerPage] = useState(6)
     useEffect(() => {
         setProducts(isProductsUpadted)
-        // axios.get("http://localhost:5555/products")
-        //     .then(response => {
-        //         setProducts(response.data.data)
-        //     })
-        //     .catch((err) => {
-        //         console.log("Error getting products" + err)
-        //     })
     }, [])
 
+     // Calculate the current list to display
+   const indexOfLastItem = currentPage * itemsPerPage;
+   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+   const currentList = products.slice(indexOfFirstItem, indexOfLastItem);
+
+   const handlePagination = (pageNumber) => {
+       setCurrentPage(pageNumber);
+   };
 
     function addProduct(product) {
         console.log("Attempting to add product:", product);
@@ -158,7 +163,7 @@ const Products = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {products.map(product => {
+                                {currentList.map(product => {
                                     return <tr key={product.productid}>
                                         <td className="border border-slate-700 rounded-md text-center">{product.productid}</td>
                                         <td className="border border-slate-700 rounded-md text-center">image</td>
@@ -177,7 +182,9 @@ const Products = () => {
                             </tbody>
                         </table>
                     </section>
-
+                    <section className="flex justify-center">
+                    <Pagination itemsPerPage={itemsPerPage} length={products.length} handlePagination={handlePagination}/>
+                    </section>
                 </div>
 
 

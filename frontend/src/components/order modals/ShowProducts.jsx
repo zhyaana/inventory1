@@ -3,56 +3,33 @@ import { IoMdClose } from "react-icons/io";
 import axios from "axios";
 import {enqueueSnackbar} from "notistack"
 import { ProductContext } from "../../App";
-const ShowProducts = ({onClose , setOrdersProducts , orderdProducts , setUpdatedQuantity}) => {
+import Pagination from "../Pagination";
+const ShowProducts = ({onClose , setOrdersProducts , orderdProducts }) => {
     const [products ,  setProducts] = useState([]);
-    const {isProductsUpadted , setIsProductsUpdated} = useContext(ProductContext)
-    // console.log(setIsProductsUpdated)
-    // console.log(isProductsUpadted)
+    const [currentPage , setCurrentPage] = useState(1)
+    const [itemsPerPage , setItemsPerPage] = useState(4)
+    const {isProductsUpadted} = useContext(ProductContext)
+
     useEffect(() => {
         setProducts(isProductsUpadted)
-        // axios.get("http://localhost:5555/products")
-        //     .then(response => {
-        //         setProducts(response.data.data)
-        //     })
-        //     .catch((err) => {
-        //         console.log("Error getting products" + err)
-        //     })
     }, [])
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentList = products.slice(indexOfFirstItem, indexOfLastItem);
+ 
+    const handlePagination = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
+ 
 function selectProduct(product){
  const isOrdered = orderdProducts.find(orderedProducts=>{
    return orderedProducts.productid !== product.productid ? false : true
  })
  
  if(!isOrdered){
-    const updatedProduct = {...product , quantity: 1 , total :product.price , stockquantity:product.stockquantity, remainedQuantity: product.stockquantity -1 }
+    const updatedProduct = {...product , quantity: 1 , total :product.price , stockquantity:product.stockquantity}
     setOrdersProducts(prevOrders=>{
         return [...prevOrders , updatedProduct];
-    })
-    const stockRemained = product.stockquantity - 1;
-    const updatedproduct = {productid:product.productid , remainedQuantity:stockRemained}
-    setUpdatedQuantity(prevUpdated=>{
-      const updated=  prevUpdated.filter(pro=>{
-          return  pro.productid !== product.productid 
-        })
-        return [
-            ...updated  ,
-            updatedproduct
-        ]
-    })
-    
-    setIsProductsUpdated(prevUpdated=>{
-        console.log(prevUpdated.products)
-        const stockUpdated = prevUpdated.map(pro=>{
-            const updatedProduct = {...pro , quantity: 0 , total :product.price}
-           const newproduct={
-            ...pro,
-            stockquantity : stockRemained
-           }
-        return   pro.productid ===product.productid ? newproduct: pro;
-           
-         })
-        return stockUpdated;
-        
     })
  }
  else{
@@ -90,7 +67,7 @@ function selectProduct(product){
                                 </tr>
                             </thead>
                             <tbody>
-                                {products.map(product => {
+                                {currentList.map(product => {
                                     return <tr key={product.productid} className={product.stockquantity<1 ?" bg-gray-100 cursor-not-allowed" :"hover:bg-gray-100 cursor-pointer"} onClick={()=>selectProduct(product)}>
                                         <td className="border border-slate-700 rounded-md text-center">{product.productid}</td>
                                         <td className="border border-slate-700 rounded-md text-center">image</td>
@@ -106,6 +83,9 @@ function selectProduct(product){
                             </tbody>
                         </table>
                     </div>
+                    <section className="flex justify-center">
+                    <Pagination itemsPerPage={itemsPerPage} length={products.length} handlePagination={handlePagination}/>
+                    </section>
                 </div>
             </div>
         </div>

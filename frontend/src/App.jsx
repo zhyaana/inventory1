@@ -8,6 +8,8 @@ import Categories from "./pages/Categories"
 import OrderList from './pages/OrderList'
 import Modal from './components/product modals/Modal'
 import axios from 'axios'
+import Pagination from './components/Pagination'
+import Invoice from './components/product modals/Invoice'
 export const CategoryContext = createContext("")
 export const ProductContext = createContext("")
 const App = () => {
@@ -51,7 +53,6 @@ useEffect(() => {
     <Route path='/customers' element={<Customers/>}/>
     <Route path='/categories' element={<Categories/>}/>
     <Route path='/orderlist' element={<OrderList/>}/>
-    <Route path='/productModal' element={<Modal/>}/>
    </Routes>
    </ProductContext.Provider>
    </CategoryContext.Provider>

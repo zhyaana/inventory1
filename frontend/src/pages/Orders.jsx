@@ -1,4 +1,4 @@
-import { useState, useEffect,useContext } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import SideBar from '../components/SideBar'
 import ShowProducts from '../components/order modals/ShowProducts';
 import ShowCustomers from '../components/order modals/ShowCustomers';
@@ -11,9 +11,8 @@ const Orders = () => {
     const [customersModal, setcustomersModal] = useState(false);
     const [orderdProducts, setOrdersProducts] = useState([]);
     const [customerOrderedBy, setCustomerOrderedBy] = useState({});
-    const [updatedQuantity , setUpdatedQuantity] = useState([])
     const [totalAmount, setTotalAmount] = useState()
-    const {isProductsUpadted , setIsProductsUpdated , notRemainedProducts , setNotRemainedProducts} = useContext(ProductContext);
+    const { setIsProductsUpdated, setNotRemainedProducts } = useContext(ProductContext);
     const calculateTotalAmount = (products) => {
         return products.reduce((sum, product) => sum + (Math.floor(product.total) || 0), 0);
     };
@@ -31,55 +30,21 @@ const Orders = () => {
                 return pro.productid !== id;
             })
         })
-       
-     
-        setUpdatedQuantity(prevUpdated=>{
-            const updated=  prevUpdated.filter(product=>{
-                return  product.productid !== id 
-              })
-              
-             return updated;
-          })
     }
     function clearOrder() {
         setCustomerOrderedBy({})
         setOrdersProducts([])
     }
-    function handlerquantityChnage(e, index , productid) {
+    function handlerquantityChnage(e, index, productid) {
         const { value } = e.target;
         const newRows = [...orderdProducts]
         // const newValue = value >newRows[index].quantity ? newRows[index].stockquantity : value
         // value > newRows[index].stockquantity && enqueueSnackbar("Only "+ newRows[index].stockquantity+ " remained" , {variant:"warning"})
-        newRows[index].quantity =   value
+        newRows[index].quantity = value
         newRows[index].total = value * newRows[index].price
         // newRows[index].remainedQuantity--;
         setOrdersProducts(newRows);
-        const stockRemained=(newRows[index].stockquantity- newRows[index].quantity );
-        console.log(newRows[index].quantity)
-        console.log(stockRemained)
-        const updatedproduct = {productid:productid , remainedQuantity:stockRemained}
-        setUpdatedQuantity(prevUpdated=>{
-          const updated=  prevUpdated.filter(product=>{
-              return  product.productid !== productid 
-            })
-            return [
-                ...updated  ,
-                updatedproduct
-            ]
-        })
-        setIsProductsUpdated(prevUpdated=>{
-            console.log(prevUpdated.products)
-            const stockUpdated = prevUpdated.map(product=>{
-               const newproduct={
-                ...product,
-                stockquantity : stockRemained
-               }
-            return   product.productid ===productid ? newproduct: product;
-               
-             })
-            return stockUpdated;
-            
-        })
+
     }
     function orderNow() {
         if (orderdProducts.length === 0) {
@@ -89,27 +54,23 @@ const Orders = () => {
             enqueueSnackbar("Select a customer", { variant: "warning" })
         }
         else {
-            axios.post(`http://localhost:5555/orders/order`, {totalAmount:totalAmount , customerID: customerOrderedBy.customerid , orderdProducts:[...orderdProducts] , updatedQuantity})
-            .then((response) => {
-               if(response.status ===201){
-                enqueueSnackbar("order successed" , {variant:"success"})
-               }
-              setIsProductsUpdated(prevProducts=>{
-                return prevProducts.filter(product=>{
-                    return product.stockquantity !== 0
+            axios.post(`http://localhost:5555/orders/order`, { totalAmount: totalAmount, customerID: customerOrderedBy.customerid, orderdProducts: [...orderdProducts] })
+                .then((response) => {
+                    console.log(response.data.orderdProducts)
+
+                    if (response.status === 201) {
+                        enqueueSnackbar("order successed", { variant: "success" })
+                    }
+                    const allProducts = response.data.data;
+                   const remained= allProducts.filter(product=>product.stockquantity !== 0)
+                   const notRemained= allProducts.filter(product=>product.stockquantity === 0)
+                    setIsProductsUpdated(remained);
+                    setNotRemainedProducts(notRemained)
                 })
-              })
-            
-              setNotRemainedProducts(prevProducts=>{
-                return prevProducts.filter(product=>{
-                    return product.stockquantity === 0
+                .catch((err) => {
+                    console.log("Error ordering" + err)
                 })
-              })
-            })
-            .catch((err) => {
-                console.log("Error ordering" + err)
-            })
-          
+
         }
     }
     return (
@@ -160,7 +121,7 @@ const Orders = () => {
                                         <td className="border border-slate-700 rounded-md text-center">{orderdProduct.productid}</td>
                                         <td className="border border-slate-700 rounded-md text-center">{orderdProduct.productname}</td>
                                         <td className='border border-slate-700 rounded-md text-center'>
-                                            <input type="number" name='quantity' min='1' max={orderdProduct.stockquantity} placeholder='Quantity' className='bg-transparent outline-none text-center' value={orderdProduct.quantity} onChange={()=>handlerquantityChnage(event, index , orderdProduct.productid)} />
+                                            <input type="number" name='quantity' min='1' max={orderdProduct.stockquantity} placeholder='Quantity' className='bg-transparent outline-none text-center' value={orderdProduct.quantity} onChange={() => handlerquantityChnage(event, index, orderdProduct.productid)} />
                                         </td>
                                         {/* <td className='border border-slate-700 rounded-md text-center'>
                                             <input type="text" name='remainedquantiity' value={orderdProduct.remainedQuantity} placeholder='remained' className='bg-transparent outline-none text-center' />
@@ -175,7 +136,7 @@ const Orders = () => {
                                             <button type="button" className=" bg-red-700 rounded-md text-center text-sm px-5 py-1 me-2 mb-2" onClick={() => removeOrderedProduct(orderdProduct.productid)}>Remove</button>
                                         </td>
                                     </tr>
-                                    
+
                                 })}
 
                             </tbody>
@@ -199,7 +160,7 @@ const Orders = () => {
 
 
             </div>
-            {productsModal && <ShowProducts onClose={() => setproductsModal(false)} orderdProducts={orderdProducts} setOrdersProducts={setOrdersProducts} setTotalAmount={setTotalAmount}  setUpdatedQuantity={setUpdatedQuantity}/>}
+            {productsModal && <ShowProducts onClose={() => setproductsModal(false)} orderdProducts={orderdProducts} setOrdersProducts={setOrdersProducts} setTotalAmount={setTotalAmount} />}
             {customersModal && <ShowCustomers onClose={() => setcustomersModal(false)} customerOrderedBy={customerOrderedBy} setCustomerOrderedBy={setCustomerOrderedBy} />}
 
         </div>

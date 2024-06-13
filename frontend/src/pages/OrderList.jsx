@@ -1,31 +1,59 @@
-import { useState , useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import SideBar from '../components/SideBar'
 import axios from 'axios'
-import {enqueueSnackbar} from "notistack"
+import { enqueueSnackbar } from "notistack"
+import Pagination from '../components/Pagination'
+import { Link } from 'react-router-dom'
+import Invoice from '../components/product modals/Invoice'
 const OrderList = () => {
-    const [orderList , setOrderList] = useState([])
-    const [viewDetail , setviewDetail] = useState([])
-    useEffect(()=>{
-     axios.get("http://localhost:5555/orders/orderlist")
-     .then(response=>{
-        console.log()
-        setOrderList(response.data.data)
-       console.log(response.data.data)
-     })
-     .catch(err=>{
-        console.log("err frtching list of orders"+err)
-     })
-    },[])
+    const [orderList, setOrderList] = useState([])
+    const [viewDetail, setviewDetail] = useState([])
+    const [invoice, setInvoice] = useState([])
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(5);
+    const [showInvoice , setShowInvoive] = useState(false)
+    useEffect(() => {
+        axios.get("http://localhost:5555/orders/orderlist")
+            .then(response => {
+                console.log()
+                setOrderList(response.data.data)
+                console.log(response.data.data)
+            })
+            .catch(err => {
+                console.log("err frtching list of orders" + err)
+            })
+    }, [])
+    // Calculate the current list to display
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentList = orderList.slice(indexOfFirstItem, indexOfLastItem);
 
-    function viewDetailOrder(orderid){
+    const handlePagination = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
+
+    function viewDetailOrder(orderid) {
         axios.get(`http://localhost:5555/orders/orderlist/orderdetail/${orderid}`)
-        .then(response=>{
-           console.log()
-           console.log(response.data.data)
-           setviewDetail(response.data.data)
+            .then(response => {
+                console.log()
+                console.log(response.data.data)
+                setviewDetail(response.data.data)
+            })
+            .catch(err => {
+                console.log("err frtching list of orders" + err)
+            })
+    }
+    function getInvoice(orderid){
+        axios.get(`http://localhost:5555/orders/orderlist/invoice/${orderid}`)
+        .then(response => {
+            if(response.status===201){
+                setInvoice(response.data.data)
+                console.log(response.data.data)
+                setShowInvoive(true)
+            }                
         })
-        .catch(err=>{
-           console.log("err frtching list of orders"+err)
+        .catch(err => {
+            console.log("err frtching list of orders" + err)
         })
     }
     return (
@@ -55,25 +83,31 @@ const OrderList = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                              {orderList.map(orderitem=>{
-                                return <tr key={orderitem.orderid}>
-                                    <td className="border border-slate-700 rounded-md text-center">{orderitem.orderid}</td>
-                                    <td className="border border-slate-700 rounded-md text-center">{orderitem.customerid}</td>
-                                    <td className="border border-slate-700 rounded-md text-center">{orderitem.firstname} {orderitem.lastname}</td>
-                                    <td className="border border-slate-700 rounded-md text-center">{orderitem.totalamount}</td>
-                                    <td className="border border-slate-700 rounded-md text-center">{orderitem.orderdate}</td>
-                                    <td className="border border-slate-700 rounded-md text-center">
-                                        <button type="button" className=" bg-gray-700 text-white rounded-md text-center text-sm px-5 py-1 me-2 mb-2" onClick={()=>viewDetailOrder(orderitem.orderid)}>view detail</button>
-                                    </td>
-                                </tr>
-                              })}
+                                {currentList.map(orderitem => {
+                                    return <tr key={orderitem.orderid}>
+                                        <td className="border border-slate-700 rounded-md text-center">{orderitem.orderid}</td>
+                                        <td className="border border-slate-700 rounded-md text-center">{orderitem.customerid}</td>
+                                        <td className="border border-slate-700 rounded-md text-center">{orderitem.firstname} {orderitem.lastname}</td>
+                                        <td className="border border-slate-700 rounded-md text-center">{orderitem.totalamount}</td>
+                                        <td className="border border-slate-700 rounded-md text-center">{orderitem.orderdate}</td>
+                                        <td className="border border-slate-700 rounded-md text-center">
+                                            <button type="button" className=" bg-gray-700 text-white rounded-md text-center text-sm px-5 py-1 me-2 mb-2" onClick={() => viewDetailOrder(orderitem.orderid)}>view detail</button>
+                                        </td>
+                                    </tr>
+                                })}
                             </tbody>
                         </table>
-
+                        <section className="pagination">
+                            <Pagination
+                                length={orderList.length}
+                                itemsPerPage={itemsPerPage}
+                                handlePagination={handlePagination}
+                            />
+                        </section>
                     </section>
                     <section>
-                    <h3>Order #29 Customer: details</h3>
-                    <table className='w-full border-separate border-spacing-2 mt-4'>
+                        <h3>Order: {viewDetail.orderid} # </h3>
+                        <table className='w-full border-separate border-spacing-2 mt-4'>
                             <thead>
                                 <tr className="">
                                     <th className=''>Product ID</th>
@@ -84,25 +118,24 @@ const OrderList = () => {
                                 </tr>
                             </thead>
                             <tbody >
-                               {viewDetail.map((detail)=>{
-                                return <tr key={detail.productid}>
-                                    <td className="border border-slate-700 rounded-md text-center">{detail.productid}</td>
-                                    <td className="border border-slate-700 rounded-md text-center">{detail.productname}</td>
-                                    <td className="border border-slate-700 rounded-md text-center">{detail.quantity}</td>
-                                    <td className="border border-slate-700 rounded-md text-center">{detail.price}</td>
-                                    <td className="border border-slate-700 rounded-md text-center">{detail.quantity * detail.price}</td>
-                                </tr>
-                               })}
+                                {viewDetail.map((detail) => {
+                                    return <tr key={detail.productid}>
+                                        <td className="border border-slate-700 rounded-md text-center">{detail.productid}</td>
+                                        <td className="border border-slate-700 rounded-md text-center">{detail.productname}</td>
+                                        <td className="border border-slate-700 rounded-md text-center">{detail.quantity}</td>
+                                        <td className="border border-slate-700 rounded-md text-center">{detail.price}</td>
+                                        <td className="border border-slate-700 rounded-md text-center">{detail.quantity * detail.price}</td>
+                                    </tr>
+
+                                })}
+
                             </tbody>
                         </table>
+                        <div className='w-full text-2xl flex justify-center bg-gray-200'>{}</div>
                         <div className="flex w-full justify-center items-center bg-gray-300 p-2 text-2xl bold">
                             <div>
-                                {/* <h3>Total Order Value: </h3> */}
-                            </div>
-                            <div>
-                                {/* <h3>$57.90 </h3> */}
-                                <button type="button" className="border border-blue-700 bg-blue-700 rounded-md text-center  px-5 py-1 me-2 mb-2 text-lg w-full">Generate Invoice</button>
-
+                                <button type="button" className="border border-blue-700 bg-blue-700 rounded-md text-center  px-5 py-1 me-2 mb-2 text-lg w-full" onClick={()=>getInvoice(viewDetail[0].orderid)}>Generate Invoice</button>
+                                
                             </div>
                             <div>
 
@@ -114,7 +147,9 @@ const OrderList = () => {
 
             </div>
 
-
+      {
+        showInvoice && <Invoice invoice={invoice}  onClose={()=>setShowInvoive(false)}/>
+      }
         </div>
     )
 }

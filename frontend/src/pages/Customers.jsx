@@ -2,11 +2,14 @@ import SideBar from '../components/SideBar'
 import { useState, useEffect } from 'react'
 import { enqueueSnackbar } from "notistack"
 import axios from 'axios'
+import Pagination from '../components/Pagination'
 const Customers = () => {
     const [customers, setCustomers] = useState([]);
     const [customer, setCustomer] = useState({ customerid: 0, firstname: "", lastname: "", email: "", phone: "", state: "", zipcode: "", address: "" });
     const [detail, setDetail] = useState([])
     const [count, setCount] = useState(0)
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(5);
 
     useEffect(() => {
         axios.get("http://localhost:5555/customers")
@@ -27,7 +30,14 @@ const Customers = () => {
             }
         })
     }
+   // Calculate the current list to display
+   const indexOfLastItem = currentPage * itemsPerPage;
+   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+   const currentList = customers.slice(indexOfFirstItem, indexOfLastItem);
 
+   const handlePagination = (pageNumber) => {
+       setCurrentPage(pageNumber);
+   };
     function showDetail(customer) {
         setCustomer(customer)
         // /customer/details/:customerID
@@ -131,7 +141,7 @@ const Customers = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {customers.map(customer => {
+                                            {currentList.map(customer => {
                                                 return <tr key={customer.customerid}>
                                                     <td className="border border-slate-700 rounded-md text-center">{customer.customerid}</td>
                                                     <td className="border border-slate-700 rounded-md text-center">{customer.firstname}</td>
@@ -148,7 +158,9 @@ const Customers = () => {
 
                                         </tbody>
                                     </table>
+                                   
                                 </div>
+                                <Pagination itemsPerPage={itemsPerPage} length={customers.length} handlePagination={handlePagination}/>
                             </div>
                             <div className="flex flex-col px-6 py-8 space-y-6 rounded-sm sm:p-8 lg:p-12 lg:w-1/2 xl:w-2/5">
 
